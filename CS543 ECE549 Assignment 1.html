@@ -1,0 +1,190 @@
+
+<!-- saved from url=(0062)http://www.cs.illinois.edu/~slazebni/spring14/assignment1.html -->
+<html><head><meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
+<title>CS543/ECE549 Assignment 1</title>
+<style type="text/css">      body.ptnt-link-snipper, body.ptnt-link-snipper span.ptnt-dummy-span {        cursor: url("chrome-extension://kkodiihpgodmdankclfibbiphjkfdenh/content/img/link-snipper.png") 11 11, crosshair !important;      }      body.ptnt-range-capture, body.ptnt-range-capture span.ptnt-dummy-span {        cursor: text !important;      }      .link-snipper .textLayer > div {        cursor: url("chrome-extension://kkodiihpgodmdankclfibbiphjkfdenh/content/img/link-snipper.png") 11 11, crosshair !important;      }    </style></head>
+<body bgcolor="white">
+<table width="800">
+<tbody><tr>
+<td>
+<h2>Spring 2014 CS543/ECE549</h2> 
+<h2>Assignment 1: Shape from Shading</h2>
+<h3>Due date: February 17, 11:59:59 PM</h3>
+
+<img src="./CS543 ECE549 Assignment 1_files/shape_from_shading.jpg" width="600"><br>
+
+
+<h3>Instructions</h3>
+
+The goal of this assignment is to implement shape from shading as described in <a href="http://www.cs.illinois.edu/~slazebni/spring14/lec04_light.pptx">Lecture 4</a>
+from January 30 (see also Section 2.2.4 of Forsyth &amp; Ponce 2nd edition), and to start becoming comfortable with MATLAB 
+image and matrix processing and display functions.
+
+<ol>
+<li> Download the <b><a href="http://www.cs.illinois.edu/~slazebni/spring14/assignment1/assignment1_materials.zip">sample code and data</a></b>. The data, in the <tt>croppedyale</tt> directory, 
+consists of 64 images each of four subjects from the <a href="http://vision.ucsd.edu/~iskwak/ExtYaleDatabase/Yale%20Face%20Database.htm">Yale Face database</a>.
+The light source directions are encoded in the file names. The code consists of several
+.m functions. Your task will be to add some code to the top-level script, <tt>run_me.m</tt>,
+and to fill in the code in <tt>photometric_stereo.m</tt> and <tt>get_surface.m</tt>, as
+explained below. The remaining files
+are utilities to load the input data and display the output.<br><br>
+ 
+</li><li> For each subject (subdirectory in croppedyale), read in the images and 
+light source directions. This is accomplished by the function <tt>LoadFaceImages.m</tt> 
+provided in the zip file (which, in turn, calls <tt>getpgmraw.m</tt>
+to read the PGM files). <tt>LoadFaceImages</tt> returns the images for the 64 light source
+directions and an <em>ambient</em> image (i.e., image taken with all the light sources
+turned off). <br><br>
+
+</li><li> Preprocess the data: subtract the ambient image from each image in the light source stack, 
+set any negative values to zero, rescale the resulting intensities to between 0 and 1 
+(they are originally between 0 and 255).<br><br> 
+
+<b>Hint:</b> these operations can be done without
+using any loops whatsoever. You may want to look into MATLAB's <tt>bsxfun</tt> function.<br><br>
+
+
+</li><li> Estimate the albedo and surface normals. For this, you need to fill in
+code in <tt>photometric_stereo.m</tt>, which is a function taking as input 
+the image stack corresponding to the different light source directions and the matrix 
+of of the light source directions, 
+and returning an albedo image and surface normal estimates. The latter should be stored in 
+a three-dimensional matrix. That is, if your original image dimensions are <tt>h x w</tt>,
+the surface normal matrix should be <tt>h x w x 3</tt>, where the third dimension corresponds
+to the x-, y-, and z-components of the normals. To solve for the albedo and the normals,
+you will need to set up a linear system as shown in slide 18 of Lecture 4.<br><br> 
+
+<b>Hints:</b> 
+<ul>
+<li> To get the least-squares solution of a linear system, use MATLAB's backslash operator.
+That is, the solution to <tt>Ax = b</tt> is given by <tt> x = A\b</tt>.
+</li><li> If you directly implement the formulation of slide 18 of the lecture, you will
+have to loop over every image pixel and separately solve a linear system in each iteration.
+There is a way to get all the solutions at once by stacking the unknown <b>g</b> vectors for 
+every pixel into a <tt>3 x npix</tt> matrix and getting all the solutions with a single 
+application of the backslash operator.
+</li><li> You will most likely need to reshape your data in various ways before and after
+solving the linear system. Useful MATLAB functions for this include <tt>reshape</tt>
+and <tt>cat</tt>. 
+</li><li> You may also need to use element-wise operations. For example, for two equal-size
+matrices X and Y, <tt>X .* Y</tt> multiplies corresponding elements, and <tt>X.^2</tt>
+squares every element. As before, <tt>bsxfun</tt> can also be a very useful function 
+here.<br><br>
+</li></ul>
+
+
+</li><li> Compute the surface height map by integration. The method is shown in slide 21
+of Lecture 4, except that instead of continuous integration of the partial derivatives
+over a path, you will simply be summing their discrete values. Your code implementing
+the integration should go in the <tt>get_surface.m</tt> file. 
+As stated in the slide, to get the best results, you should compute integrals
+over multiple paths and average the results. You should implement the following variants of
+integration: 
+<ol type="a">
+<li> Integrating first the rows, then the columns. That is, your path first goes along
+the same row as the pixel along the top, and then goes vertically down to the pixel.
+It is possible to implement this without nested loops using the <tt>cumsum</tt> function.
+</li><li> Integrating first along the columns, then the rows.
+</li><li> Average of the first two options. 
+</li><li> Average of multiple random paths. For this, it is fine to use
+nested loops. You should determine the number of paths experimentally.<br><br>
+</li></ol>
+
+</li><li> Display the results using functions <tt>display_output</tt> and <tt>plot_surface_normals</tt>
+included in the zip archive. <br><br>
+</li></ol>
+
+<h3>Extra Credit</h3>
+
+On this assignment, there are not too many opportunities for "easy" extra credit. This said, here are some ideas for exploration:
+<ul>
+<li> Generate synthetic input data using a 3D model and a graphics renderer and run your method on this data. Do you get better results than on the face data?
+How close do you get to the ground truth (i.e., the true surface shape and albedo)?
+</li><li> Investigate more advanced methods for shape from shading or surface reconstruction from normal fields.
+</li><li> Try to detect and/or correct misalignment problems in the initial images and see if you can improve the solution.
+</li><li> Using your initial solution, try to detect areas of the original images that do not meet the assumptions of the method (shadows, specularities, etc.).
+Then try to recompute the solution without that data and see if you can improve the quality of the solution.
+</li></ul>
+If you complete any work for extra credit, be sure to clearly mark that work in your report.<br><br>
+
+
+<h3>Grading Checklist</h3>
+
+You should turn in both your <b><font color="red">code</font></b> and a <b><font color="red">report</font></b> 
+discussing your solution and results. For full credit, your report should include a section for each of
+the following questions:
+
+<ol>
+<li> Briefly describe your implemented solution, focusing especially on the more
+"non-trivial" or interesting parts of the solution. What implementation choices did you
+make, and how did they affect the quality of the result and the speed of computation?
+What are some artifacts and/or limitations of your implementation, and what are 
+possible reasons for them?<br><br>
+
+</li><li> Discuss the differences between the different integration methods
+you have implemented for #5 above. Specifically, you should choose one subject, 
+display the outputs for all of a-d (be sure to choose viewpoints that make the differences
+especially visible), and discuss which method produces the best results and why. 
+You should also compare the running times of the different approaches. For timing, you
+can use <tt>tic</tt> and <tt>toc</tt> functions. For the remaining subjects (see below), 
+it is sufficient to simply show the output of your best method, and it is not necessary
+to give running times.<br><br>
+
+</li><li> For every subject, display your estimated albedo maps and screenshots of height maps
+(use <tt>display_output</tt> and <tt>plot_surface_normals</tt>). 
+When inserting results images into your report, you
+should resize/compress them appropriately to keep the file size manageable -- but make sure
+that the correctness and quality of your output can be clearly and easily judged. 
+For the 3D screenshots, be sure to choose a viewpoint that makes the structure as clear
+as possible (and/or feel free to include screenshots from multiple viewpoints). 
+<b>You will not receive credit for any results you have obtained, but failed to include
+directly in the report PDF file.</b>
+<br><br>
+
+</li><li> Discuss how the Yale Face data violate the assumptions of the shape-from-shading method
+covered in the slides. What features of the data can contribute to errors in the results?
+Feel free to include specific input images to illustrate your points. Choose one subject and
+attempt to select a subset of all viewpoints that better match the assumptions of the method.
+Show your results for that subset and discuss whether you were able to get any improvement
+over a reconstruction computed from all the viewpoints.
+</li></ol>
+
+<h3>Instructions for Submitting the Assignment</h3>
+
+Your submission should consist of the following:
+<ul>
+<li>All your MATLAB code <b>in a single zip file</b>.
+The filename should be <b>lastname_firstname_a1.zip</b>.
+</li><li>Your report <b>in a single PDF file</b> with all your results (including images) and discussion. 
+The filename should be <b>lastname_firstname_a1.pdf</b>.
+</li></ul>
+
+<p>The files will be submitted through <b><a href="https://compass2g.illinois.edu/">Compass 2g</a></b>. Upload instructions:
+
+</p><ol>
+<li> Log into <b><a href="https://compass2g.illinois.edu/">https://compass2g.illinois.edu</a></b> and go to <b>Fall 2014 ECE549</b>.
+</li><li> Select <b>Course Content</b> from the left column.
+</li><li> Select <b>Assignment 1</b> from the list.
+</li><li> Upload <b>(1) your PDF report</b> and <b>(2) the zip file containing your code</b> as two attachments.
+</li><li> Hit <b>Submit</b>.
+</li></ol>
+
+Multiple attempts will be allowed but only your last submission before the deadline will be graded.
+<b>We reserve the right to take off points for not following directions.</b>
+
+<p><b>Late policy:</b> You lose 25% of the points for every day the assignment is late.
+If you have a compelling reason for not being able to submit the assignment on time
+and would like to make a special arrangement, you must send me email <b>at least a week before the due date</b>
+(any genuine emergency situations will be handled on an individual basis).
+
+</p><p><b>Academic integrity:</b> Feel free to discuss the assignment with each other in general terms,
+and to search the Web for general guidance (not for complete solutions). Coding should be done
+individually. If you make substantial use of some code snippets or information from outside sources, 
+be sure to acknowledge the sources in your report. At the first instance of cheating (copying from 
+other students or unacknowledged sources on the Web), a grade of zero will be given for the assignment. 
+At the second instance, you will automatically receive an F for the entire course.
+
+</p></td></tr></tbody></table>
+
+
+</body></html>
